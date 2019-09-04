@@ -39,23 +39,32 @@ DATE=$(date "+%Y%m%d-%H%M%S")
 
 ###### 前準備 ######
 
-# データをgoogle driveからダウンロード
+# データをgoogle driveからダウンロードして、Data/anotrace以下に配置する
 ## TODO
 
 # バックアップ
-## TODO
 ## backupディレクトリに、DATEを付してバックアップする
+
+# tar -cvfz ./Backup/anotraces.tgz ./Data/anotraces
 
 # ディレクトリの準備
 
+## IDPとTRPディレクトリ
 if [ ! -e $dir/Data/IDP ] ; then
+  mkdir $dir/Data/IDP
+else
+  rm -r $dir/Data/IDP
   mkdir $dir/Data/IDP
 fi
 
 if [ ! -e $dir/Data/TRP ] ; then
   mkdir $dir/Data/TRP
+else
+  rm -r $dir/Data/TRP
+  mkdir $dir/Data/TRP
 fi
 
+## ANOとOFGとREF
 if [ ! -e ${DIR_ANO_IDP} ] ; then
   mkdir ${DIR_ANO_IDP}
 fi
@@ -80,6 +89,7 @@ if [ ! -e ${DIR_REF_TRP} ] ; then
   mkdir ${DIR_REF_TRP}
 fi
 
+## 仮名化データ置き場
 if [ ! -e ${DIR_ANO_IDP}_shuffle ] ; then
   mkdir ${DIR_ANO_IDP}_shuffle
 fi
@@ -104,15 +114,15 @@ python3 $dir/Prog_Shuffle/ShuffleIDs.py ${DIR_ANO_IDP} ${DIR_ANO_IDP}_shuffle
 python3 $dir/Prog_Shuffle/ShuffleIDs.py ${DIR_ANO_TRP} ${DIR_ANO_TRP}_shuffle
 
 
+# 評価結果を作る
 ## TODO: 並列処理する予定
 
-echo NUM,UTILITY_IDP,SAFETY_IDP >> $dir/res_IDP.txt
-echo NUM,UTILITY_TRP,SAFETY_TRP >> $dir/res_TRP.txt
+echo NUM,UTILITY_IDP,SAFETY_IDP > ${dir}/Result/res_IDP_${DATE}
+echo NUM,UTILITY_TRP,SAFETY_TRP > ${dir}/Result/res_TRP_${DATE}
 
-seq -f %03g ${NUMBER_OF_TEAMS} |
-head -n 3 | 
-while read NUM
-do
+function eval() {
+  NUM=$1
+
   # ID識別対策
 
   FILENAME_ANOTRACES_IDP=$(echo ${DIR_ANO_IDP}"/anotraces_team"${NUM}"_data01_IDP.csv")
@@ -123,13 +133,13 @@ do
   FILENAME_ETABLE_IDP=$(echo ${DIR_ANO_IDP}"_shuffle/pubtraces_team"${NUM}"_data01_TRP.csv")
 
   ### 有用性評価
-  UTILITY_IDP=$(python3 $dir/Prog_Eval/EvalUtil.py $FILENAME_ORGTRACES_IDP $FILENAME_ANOTRACES_IDP)
+  UTILITY_IDP=$(python3 $dir/Prog_Eval/EvalUtil.py $FILENAME_ORGTRACES_IDP $FILENAME_ANOTRACES_IDP || echo 0)
 
   ## 安全性評価
   ### 加工
-  python3 $dir/SmplProg_IDDisclose/I1-rand.py ${FILENAME_REFTRACES_IDP} ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP}
+  python3 $dir/SmplProg_IDDisclose/I1-rand.py ${FILENAME_REFTRACES_IDP} ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0
   ### 推定
-  SAFETY_IDP=$(python3 $dir/Prog_Eval/EvalSecI.py ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP})
+  SAFETY_IDP=$( python3 $dir/Prog_Eval/EvalSecI.py ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0 )
 
   # トレース推定対策
   FILENAME_ANOTRACES_TRP=$(echo ${DIR_ANO_TRP}"/anotraces_team"${NUM}"_data02_TRP.csv")
@@ -140,18 +150,23 @@ do
   FILENAME_ETRACES_TRP=$(echo ${DIR_ANO_TRP}"_shuffle/etraces_team"${NUM}"_data02_TRP.csv")
 
   ### 有用性評価
-  UTILITY_TRP=$(python3 $dir/Prog_Eval/EvalUtil.py $FILENAME_ORGTRACES_TRP $FILENAME_ANOTRACES_TRP)
+  UTILITY_TRP=$(python3 $dir/Prog_Eval/EvalUtil.py $FILENAME_ORGTRACES_TRP $FILENAME_ANOTRACES_TRP || echo 0)
 
   ## 安全性評価
 
-  python3 $dir/SmplProg_TraceInfer/T1-rand.py ${FILENAME_REFTRACES_TRP} ${FILENAME_PUBTRACES_TRP} ${FILENAME_ETRACES_TRP}
-  SAFETY_TRP=$(python3 $dir/Prog_Eval/EvalSecT.py ${FILENAME_ORGTRACES_TRP} ${FILENAME_ETRACES_TRP})
+  python3 $dir/SmplProg_TraceInfer/T1-rand.py ${FILENAME_REFTRACES_TRP} ${FILENAME_PUBTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0
+  SAFETY_TRP=$( python3 $dir/Prog_Eval/EvalSecT.py ${FILENAME_ORGTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0 ) 
   
-  echo ${NUM},${UTILITY_IDP},${SAFETY_IDP} >> res_IDP.txt
-  echo ${NUM},${UTILITY_TRP},${SAFETY_TRP} >> res_TRP.txt
+  echo ${NUM},${UTILITY_IDP},${SAFETY_IDP} >> $dir/Result/res_IDP_${DATE}
+  echo ${NUM},${UTILITY_TRP},${SAFETY_TRP} >> $dir/Result/res_TRP_${DATE}
+}
 
-done
 
 
+seq -f %03g ${NUMBER_OF_TEAMS} |
+while read NUM
+do
+  eval $NUM
+done 
 
 
