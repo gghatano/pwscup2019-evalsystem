@@ -6,6 +6,13 @@ else
   rm -r $dir/Data/anotraces
   mkdir $dir/Data/anotraces
 fi
+
+if [ ! -e $dir/Data/anotraces ] ; then
+  mkdir $dir/Data/anotraces
+else
+  rm -r $dir/Data/anotraces
+  mkdir $dir/Data/anotraces
+fi
 if [ ! -e $dir/Data/orgreftraces ] ; then
   mkdir $dir/Data/orgreftraces
 else

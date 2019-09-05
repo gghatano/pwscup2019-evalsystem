@@ -5,7 +5,7 @@
 ###### パラメータ ######
 
 ## チーム数
-NUMBER_OF_TEAMS=20
+NUMBER_OF_TEAMS=21
 
 ## このファイルの場所
 dir=$(dirname $0)
@@ -45,7 +45,8 @@ DATE=$(date "+%Y%m%d-%H%M%S")
 # バックアップ
 ## backupディレクトリに、DATEを付してバックアップする
 
-# tar -cvfz ./Backup/anotraces.tgz ./Data/anotraces
+# tar -cvfz ${dir}/Backup/anotraces.tgz ${dir}/Data/anotraces/*
+# mv $dir/Backup/anotraces.tgz $dir/Backup/anotraces.${DATE}.tgz
 
 # ディレクトリの準備
 
@@ -110,6 +111,9 @@ cp ${DIR_REF}/*_TRP.csv ${DIR_REF_TRP}/
 
 # 匿名加工データを配置したディレクトリ以下の全ファイルを仮名化する
 ## シャッフル
+### 必要なら文字コードを変える
+nkf -w8 --overwrite ${DIR_ANO_IDP}/*
+nkf -w8 --overwrite ${DIR_ANO_TRP}/*
 python3 $dir/Prog_Shuffle/ShuffleIDs.py ${DIR_ANO_IDP} ${DIR_ANO_IDP}_shuffle
 python3 $dir/Prog_Shuffle/ShuffleIDs.py ${DIR_ANO_TRP} ${DIR_ANO_TRP}_shuffle
 
@@ -117,6 +121,7 @@ python3 $dir/Prog_Shuffle/ShuffleIDs.py ${DIR_ANO_TRP} ${DIR_ANO_TRP}_shuffle
 # 評価結果を作る
 ## TODO: 並列処理する予定
 
+### ヘッダーを作る
 echo NUM,UTILITY_IDP,SAFETY_IDP > ${dir}/Result/res_IDP_${DATE}
 echo NUM,UTILITY_TRP,SAFETY_TRP > ${dir}/Result/res_TRP_${DATE}
 
@@ -163,7 +168,9 @@ function eval() {
 
 
 
+## 実行
 seq -f %03g ${NUMBER_OF_TEAMS} |
+head -n ${NUMBER_OF_TEAMS} |  
 while read NUM
 do
   eval $NUM

@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """
 Created by Takao Murakami Jun 12, 2019 (last updated: Aug 22, 2019).
 
