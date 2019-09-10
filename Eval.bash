@@ -136,10 +136,15 @@ function eval() {
   UTILITY_IDP=$(python3 $dir/Prog_Eval/EvalUtil.py $FILENAME_ORGTRACES_IDP $FILENAME_ANOTRACES_IDP || echo 0)
 
   ## 安全性評価
-  ### 加工
+  ### 加工と推定
   python3 $dir/SmplProg_IDDisclose/I1-rand.py ${FILENAME_REFTRACES_IDP} ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0
-  ### 推定
-  SAFETY_IDP=$( python3 $dir/Prog_Eval/EvalSecI.py ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0 )
+  SAFETY_IDP1=$( python3 $dir/Prog_Eval/EvalSecI.py ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0 )
+
+  python3 $dir/SmplProg_IDDisclose/I2-VistProb.py ${FILENAME_REFTRACES_IDP} ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0
+  SAFETY_IDP2=$( python3 $dir/Prog_Eval/EvalSecI.py ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0 )
+
+  python3 $dir/SmplProg_IDDisclose/I3-HomeProb.py ${FILENAME_REFTRACES_IDP} ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0
+  SAFETY_IDP3=$( python3 $dir/Prog_Eval/EvalSecI.py ${FILENAME_PTABLE_IDP} ${FILENAME_ETABLE_IDP} || echo 0 )
 
   # トレース推定対策
   FILENAME_ANOTRACES_TRP=$(echo ${DIR_ANO_TRP}"/anotraces_team"${NUM}"_data02_TRP.csv")
@@ -155,10 +160,14 @@ function eval() {
   ## 安全性評価
 
   python3 $dir/SmplProg_TraceInfer/T1-rand.py ${FILENAME_REFTRACES_TRP} ${FILENAME_PUBTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0
-  SAFETY_TRP=$( python3 $dir/Prog_Eval/EvalSecT.py ${FILENAME_ORGTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0 ) 
+  SAFETY_TRP1=$( python3 $dir/Prog_Eval/EvalSecT.py ${FILENAME_ORGTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0 ) 
+  python3 $dir/SmplProg_TraceInfer/T2-VisitProb.py ${FILENAME_REFTRACES_TRP} ${FILENAME_PUBTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0
+  SAFETY_TRP2=$( python3 $dir/Prog_Eval/EvalSecT.py ${FILENAME_ORGTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0 ) 
+  python3 $dir/SmplProg_TraceInfer/T3-HomeProb.py ${FILENAME_REFTRACES_TRP} ${FILENAME_PUBTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0
+  SAFETY_TRP3=$( python3 $dir/Prog_Eval/EvalSecT.py ${FILENAME_ORGTRACES_TRP} ${FILENAME_ETRACES_TRP} || echo 0 ) 
   
-  echo ${NUM},${UTILITY_IDP},${SAFETY_IDP} >> $dir/Result/res_IDP_${DATE}
-  echo ${NUM},${UTILITY_TRP},${SAFETY_TRP} >> $dir/Result/res_TRP_${DATE}
+  echo ${NUM},${UTILITY_IDP},${SAFETY_IDP1},${SAFETY_IDP2},${SAFETY_IDP3} >> $dir/Result/res_IDP_${DATE}
+  echo ${NUM},${UTILITY_TRP},${SAFETY_TRP1},${SAFETY_TRP2},${SAFETY_TRP3}>> $dir/Result/res_TRP_${DATE}
 }
 
 
