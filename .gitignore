@@ -1,1 +1,6 @@
-Data/*
+/Data/*
+!/Data/.gitkeep
+/Result/*
+!/Result/.gitkeep
+/Backup/*
+!/Backup/.gitkeep
