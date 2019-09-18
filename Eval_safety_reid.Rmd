@@ -1,0 +1,71 @@
+## ID推定フェーズ 結果集計
+
+### データ読み込みと前処理
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+library(stringr)
+
+dat_ptable = readr::read_csv("ptable_all.csv") %>% 
+ mutate(team = str_extract(team, "[0-9]+")) %>% 
+ filter(data == "IDP")
+dat_etable = readr::read_csv("etable_all_result.csv") %>% 
+ mutate(user_id = user_id + 2000) %>% 
+ rename(user_id_anon = user_id)
+
+## 仮名表
+dat_ptable %>% head
+```
+
+
+### 推定仮名表
+```{r}
+dat_etable %>% head
+
+```
+
+
+### 再識別正解判定
+```{r}
+dat_reid = 
+ dat_etable %>% 
+ inner_join(dat_ptable, by = c("target" = "team", "user_id_anon" = "user_id_anon")) %>% 
+ select(-data) %>% 
+ mutate(HIT_FLG = (user_id_estimated == user_id_raw)) 
+
+dat_reid %>% head
+```
+
+### 全体の推定成功判定結果
+```{r}
+dat_reid %>% pull(HIT_FLG) %>% table
+```
+
+### 攻撃成功数のランキング
+
+攻撃者ごとに推定成功数を上位から
+```{r}
+dat_reid %>% 
+ group_by(attacker) %>% 
+ summarise(HIT = sum(HIT_FLG)) %>% 
+ arrange(desc(HIT))
+```
+富士通、電通大、井口さん
+
+まあ、妥当っぽい...？
+
+### 防御のランキング
+1 - 再識別被成功率の最大値
+
+```{r}
+dat_reid %>% 
+ group_by(target, attacker) %>% 
+ summarise(HIT_RATE = mean(HIT_FLG)) %>% 
+ ungroup %>% 
+ group_by(target) %>% 
+ summarise(HIT_RATE_MAX = max(HIT_RATE)) %>%
+ mutate(SAFETY = 1 - HIT_RATE_MAX) %>% 
+ arrange(desc(SAFETY))
+
+```
+

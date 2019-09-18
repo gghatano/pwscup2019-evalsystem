@@ -20,7 +20,7 @@ else
   mkdir $dir/Data/orgreftraces
 fi
 
-seq -f %03g 20 | while read line 
+seq -f %03g 0 1 | while read line 
 do
   
   echo $line
